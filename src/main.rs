@@ -1,5 +1,6 @@
 use regex::Regex;
 use crate::io::read_line;
+use std::fmt::{Display, Formatter};
 
 mod io;
 
@@ -22,6 +23,18 @@ enum Operator {
     Minus,
     Multiply,
     Divide,
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let as_string = match self {
+            Operator::Plus => "+",
+            Operator::Minus => "-",
+            Operator::Multiply => "*",
+            Operator::Divide => "/",
+        };
+        write!(f, "{}", as_string)
+    }
 }
 
 fn parse_formula(input: &str) -> Result<(f64, Operator, f64), &str> {
