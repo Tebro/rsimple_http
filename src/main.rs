@@ -1,5 +1,6 @@
 use crate::calc::handle_calculate;
 use crate::http::server::start_server;
+use crate::http::response::Response;
 use crate::io::read_line;
 
 mod calc;
@@ -27,9 +28,9 @@ fn handle_command(cmd: Command) -> bool {
         Command::Exit => return false,
         Command::Serve => {
             // TODO handle
-            let _res = start_server(|req| match handle_calculate(&req.body) {
-                Ok(result) => format!("{}", result).to_string(),
-                Err(e) => format!("Error: {}", e).to_string(),
+            let _res = start_server("127.0.0.1:7878",|req| match handle_calculate(&req.body) {
+                Ok(result) => Response::ok(format!("{}", result).to_string()),
+                Err(e) => Response::with_code(500, format!("Error: {}", e).to_string()),
             });
         }
         Command::Formula(input) => {

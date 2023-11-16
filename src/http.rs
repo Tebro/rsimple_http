@@ -1,33 +1,30 @@
-mod request;
+pub mod request;
+pub mod response;
 
 pub mod server {
-    use super::request::{parse, Request};
+    use super::{request::{parse, Request}, response::Response};
     use std::{
         io::{self, BufReader, Write},
         net::{TcpListener, TcpStream},
     };
 
-    fn handle_connection(mut stream: TcpStream, handler: fn(Request) -> String) {
+
+    fn handle_connection(mut stream: TcpStream, handler: fn(Request) -> Response) {
         let mut buf_reader = BufReader::new(&mut stream);
 
         let Ok(parsed) = parse(&mut buf_reader) else {
             println!("Got bad request!");
-            let _ = stream.write_all("HTTP/1.1 400 BAD REQUEST".as_bytes());
+            let _ = stream.write_all("HTTP/1.1 400 BAD REQUEST".as_bytes()); // TODO
             return;
         };
         
         let response = handler(parsed);
-
-        let status_line = "HTTP/1.1 200 OK";
-        let length = response.len();
-
-        let raw = format!("{status_line}\r\nContent-Length: {length}\r\n\r\n{response}");
-
+        let raw = response.to_string();
         let _ = stream.write_all(raw.as_bytes());
     }
 
-    pub fn start_server(request_handler: fn(Request) -> String) -> io::Result<()> {
-        let listener = TcpListener::bind("127.0.0.1:7878")?;
+    pub fn start_server(address: &str, request_handler: fn(Request) -> Response) -> io::Result<()> {
+        let listener = TcpListener::bind(address)?;
 
         for stream in listener.incoming() {
             let stream = stream.unwrap(); // TODO?
