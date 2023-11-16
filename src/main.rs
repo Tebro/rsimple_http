@@ -1,12 +1,15 @@
 use crate::calc::handle_calculate;
+use crate::http::server::start_server;
 use crate::io::read_line;
 
 mod calc;
+mod http;
 mod io;
 
 #[derive(Debug)]
 enum Command {
     Exit,
+    Serve,
     Formula(String),
 }
 
@@ -14,6 +17,7 @@ enum Command {
 fn parse_command(input: &str) -> Command {
     match input {
         "exit" => Command::Exit,
+        "serve" => Command::Serve,
         _ => Command::Formula(String::from(input)),
     }
 }
@@ -21,6 +25,13 @@ fn parse_command(input: &str) -> Command {
 fn handle_command(cmd: Command) -> bool {
     match cmd {
         Command::Exit => return false,
+        Command::Serve => {
+            // TODO handle
+            let _res = start_server(|req| match handle_calculate(&req.body) {
+                Ok(result) => format!("{}", result).to_string(),
+                Err(e) => format!("Error: {}", e).to_string(),
+            });
+        }
         Command::Formula(input) => {
             let result = handle_calculate(&input);
             match result {
