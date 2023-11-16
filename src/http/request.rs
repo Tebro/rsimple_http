@@ -7,7 +7,11 @@ use std::{
 #[derive(Debug, PartialEq)]
 pub enum Method {
     GET,
+    HEAD,
     POST,
+    PUT,
+    PATCH,
+    DELETE,
 }
 
 #[derive(Debug)]
@@ -27,7 +31,7 @@ fn get_content_length(headers: &HashMap<String, String>) -> Result<usize, String
         // TODO: bad request
         return Err("Content-Length not integer".to_string());
     };
-    Ok(size) 
+    Ok(size)
 }
 
 pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
@@ -42,7 +46,11 @@ pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
     let method = split.next();
     let method = match method {
         Some("GET") => Method::GET,
+        Some("HEAD") => Method::HEAD,
         Some("POST") => Method::POST,
+        Some("PUT") => Method::PUT,
+        Some("PATCH") => Method::PATCH,
+        Some("DELETE") => Method::DELETE,
         _ => return Err("unsupported method".to_string()),
     };
 
