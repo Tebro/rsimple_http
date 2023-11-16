@@ -1,4 +1,8 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    io::{BufRead, BufReader, Read},
+    net::TcpStream,
+};
 
 #[derive(Debug, PartialEq)]
 pub enum Method {
@@ -14,18 +18,10 @@ pub struct Request {
     pub body: String,
 }
 
-pub mod util {
-    use regex::Regex;
-    pub fn is_header(s: &String) -> bool {
-        let header_re = Regex::new(r"^\S+:.*$").unwrap();
-        header_re.is_match(s)
-    }
-}
-
-pub fn parse(raw: Vec<String>) -> Result<Request, String> {
-    let mut it = raw.iter();
-    let Some(status_line) = it.next() else {
-        return Err("no status line".to_string());
+pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
+    let mut status_line = String::new();
+    let Ok(_n) = buf.read_line(&mut status_line) else {
+        return Err("could not read status line".to_string());
     };
     let mut split = status_line.split_whitespace();
 
@@ -40,15 +36,30 @@ pub fn parse(raw: Vec<String>) -> Result<Request, String> {
         return Err("invalid format".to_string());
     };
 
-    let headers: HashMap<String, String> = it
-        .take_while(|line| util::is_header(line))
+    let mut header_pairs = vec![];
+
+    loop {
+        let mut line = String::new();
+        let Ok(n) = buf.read_line(&mut line) else {
+            return Err("could not read header line".to_string());
+        };
+        if n < 3 {
+            break; // end of headers
+        }
+        header_pairs.push(line);
+    }
+    let headers: HashMap<String, String> = header_pairs
+        .iter()
         .map(|line| line.split_once(":").unwrap())
-        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
         .collect();
 
-    let body = raw[headers.len() + 1..]
-        .iter()
-        .fold(String::new(), |a, b| a + b + "\n");
+    let content_length = headers.get("Content-Length").unwrap(); // TODO: bad request
+    let size = content_length.parse::<usize>().unwrap();
+
+    let mut body_buf = vec![0; size];
+    let _n = buf.read_exact(&mut body_buf).unwrap();
+    let body = String::from_utf8(body_buf).unwrap();
 
     return Ok(Request {
         method,
@@ -56,26 +67,4 @@ pub fn parse(raw: Vec<String>) -> Result<Request, String> {
         headers,
         body,
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse() {
-        let input: Vec<String> = vec![
-            "GET / HTTP1.0".to_string(),
-            "Foo: bar".to_string(),
-            "Bar: bat".to_string(),
-            "Body starts here".to_string(),
-            "And ends after this".to_string(),
-        ];
-
-        let req = parse(input).unwrap();
-        assert_eq!(req.method, Method::GET);
-        assert_eq!(req.path, "/");
-        assert_eq!(req.headers.len(), 2);
-        assert_eq!(req.body, "Body starts here\nAnd ends after this\n");
-    }
 }

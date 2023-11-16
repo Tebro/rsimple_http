@@ -3,18 +3,14 @@ mod request;
 pub mod server {
     use super::request::{parse, Request};
     use std::{
-        io::{self, BufRead, BufReader, Write},
+        io::{self, BufReader, Write},
         net::{TcpListener, TcpStream},
     };
 
     fn handle_connection(mut stream: TcpStream, handler: fn(Request) -> String) {
-        let buf_reader = BufReader::new(&mut stream);
-        let http_request: Vec<_> = buf_reader
-            .lines()
-            .map(|result| result.unwrap())
-            .take_while(|line| !line.is_empty())
-            .collect();
-        let Ok(parsed) = parse(http_request) else {
+        let mut buf_reader = BufReader::new(&mut stream);
+
+        let Ok(parsed) = parse(&mut buf_reader) else {
             println!("Got bad request!");
             let _ = stream.write_all("HTTP/1.1 400 BAD REQUEST".as_bytes());
             return;
