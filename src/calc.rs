@@ -45,3 +45,22 @@ pub fn handle_calculate(input: &String) -> Result<f64, String> {
     let formula = parse_formula(&input)?;
     Ok(formula.execute())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn formula_exec() {
+        let f = Formula(1.0, Operator::Plus, 1.0);
+        assert_eq!(f.execute(), 2.0);
+    }
+
+    #[test]
+    fn formula_parse() {
+        let f = parse_formula("10 + 20").unwrap();
+        assert_eq!(f.0, 10.0);
+        assert_eq!(f.1.to_string(), "+");
+        assert_eq!(f.2, 20.0);
+    }
+}
