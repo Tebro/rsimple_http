@@ -31,6 +31,8 @@ fn get_content_length(headers: &HashMap<String, String>) -> Result<usize, String
 }
 
 pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
+    // TODO could this be done with a lines() iteration with take_while line > 2 and still get the body
+    // after that.
     let mut status_line = String::new();
     let Ok(_n) = buf.read_line(&mut status_line) else {
         return Err("could not read status line".to_string());
