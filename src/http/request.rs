@@ -18,6 +18,18 @@ pub struct Request {
     pub body: String,
 }
 
+fn get_content_length(headers: &HashMap<String, String>) -> Result<usize, String> {
+    let Some(content_length) = headers.get("Content-Length") else {
+        // TODO: bad request
+        return Err("Content-Length missing".to_string());
+    };
+    let Ok(size) = content_length.parse::<usize>() else {
+        // TODO: bad request
+        return Err("Content-Length not integer".to_string());
+    };
+    Ok(size) 
+}
+
 pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
     let mut status_line = String::new();
     let Ok(_n) = buf.read_line(&mut status_line) else {
@@ -48,14 +60,14 @@ pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
         }
         header_pairs.push(line);
     }
+
     let headers: HashMap<String, String> = header_pairs
         .iter()
         .map(|line| line.split_once(":").unwrap())
         .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
         .collect();
 
-    let content_length = headers.get("Content-Length").unwrap(); // TODO: bad request
-    let size = content_length.parse::<usize>().unwrap();
+    let size = get_content_length(&headers)?;
 
     let mut body_buf = vec![0; size];
     let _n = buf.read_exact(&mut body_buf).unwrap();
