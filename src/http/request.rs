@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    io::{BufRead, BufReader, Read},
-    net::TcpStream,
-};
+use std::{collections::HashMap, io::BufRead};
 
 #[derive(Debug, PartialEq)]
 pub enum Method {
@@ -22,20 +18,17 @@ pub struct Request {
     pub body: String,
 }
 
-fn get_content_length(headers: &HashMap<String, String>) -> Result<usize, String> {
-    let Some(content_length) = headers.get("Content-Length") else {
-        // TODO: bad request
-        return Err("Content-Length missing".to_string());
-    };
+fn get_content_length(headers: &HashMap<String, String>) -> Option<usize> {
+    let content_length = headers.get("Content-Length")?;
     let Ok(size) = content_length.parse::<usize>() else {
         // TODO: bad request
-        return Err("Content-Length not integer".to_string());
+        return None;
     };
-    Ok(size)
+    Some(size)
 }
 
 /// Parses reads and parses a HTTP request
-pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
+pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
     // TODO could this be done with a lines() iteration with take_while line > 2 and still get the body
     // after that.
     let mut status_line = String::new();
@@ -78,11 +71,18 @@ pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
         .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
         .collect();
 
-    let size = get_content_length(&headers)?;
+    let size = match get_content_length(&headers) {
+        Some(size) => size,
+        None => 0,
+    };
 
-    let mut body_buf = vec![0; size];
-    let _n = buf.read_exact(&mut body_buf).unwrap();
-    let body = String::from_utf8(body_buf).unwrap();
+    let body = if size > 0 {
+        let mut body_buf = vec![0; size];
+        let _n = buf.read_exact(&mut body_buf).unwrap();
+        String::from_utf8(body_buf).unwrap()
+    } else {
+        String::new()
+    };
 
     return Ok(Request {
         method,

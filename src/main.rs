@@ -1,7 +1,7 @@
 use crate::calc::handle_calculate;
 use rsimple_http::http::request::Method;
 use rsimple_http::http::response::Response;
-use rsimple_http::http::server::start_server;
+use rsimple_http::http::start_server;
 
 mod calc;
 
@@ -12,6 +12,7 @@ fn main() {
     // TODO handle startup and listening errors
     let _ = start_server(address, |req| match req.path.as_str() {
         "/" => Response::ok("Hello World!".to_string()),
+        "/error" => Response::with_code(1000, "Lol".to_string()),
         "/calc" => match req.method {
             Method::POST => match handle_calculate(&req.body) {
                 Ok(result) => Response::ok(format!("{}", result).to_string()),

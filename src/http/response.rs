@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+};
 
 pub struct Response {
     code: usize,
@@ -71,16 +74,17 @@ impl Response {
     fn length(&self) -> usize {
         self.body.len()
     }
+}
 
-    /// Converts the Response into a raw HTTP response string
-    pub fn to_string(&self) -> String {
+impl Display for Response {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let code_name = code_name(self.code);
         let status_line = match code_name {
             // TODO cleanup
             Some(name) => format!("HTTP/1.1 {} {}", self.code, name),
             None => {
-                println!("Error: invalid status code in response: {}", self.code);
-                "HTTP/1.1 500 Internal Server Error".to_string()
+                println!("invalid status code in response: {}", self.code);
+                return Err(fmt::Error);
             }
         };
         let length = self.length();
@@ -92,14 +96,19 @@ impl Response {
                 .collect::<Vec<String>>()
                 .join("\r\n");
 
-            return format!(
+            write!(
+                f,
                 "{status_line}\r\n{headers}\r\nContent-Length: {length}\r\n\r\n{}",
                 self.body
-            );
+            )?;
+            return Ok(());
         }
-        return format!(
+        write!(
+            f,
             "{status_line}\r\nContent-Length: {length}\r\n\r\n{}",
             self.body
-        );
+        )?;
+
+        return Ok(());
     }
 }
