@@ -32,7 +32,7 @@ pub fn start_server(address: &str, request_handler: fn(Request) -> Response) -> 
     let listener = TcpListener::bind(address)?;
 
     for stream in listener.incoming() {
-        let stream = stream.unwrap(); // TODO?
+        let stream = stream?;
         thread::spawn(move || {
             handle_connection(stream, &request_handler);
         });
