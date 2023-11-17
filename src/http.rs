@@ -17,7 +17,8 @@ pub mod server {
 
         let Ok(parsed) = parse(&mut buf_reader) else {
             println!("Got bad request!");
-            let _ = stream.write_all("HTTP/1.1 400 BAD REQUEST".as_bytes()); // TODO
+            // TODO match different errors and handle properly eg. missing Content-Length
+            let _ = stream.write_all("HTTP/1.1 400 BAD REQUEST".as_bytes());
             return;
         };
 
@@ -26,6 +27,10 @@ pub mod server {
         let _ = stream.write_all(raw.as_bytes());
     }
 
+    /// Start a TCP listener on `address`
+    /// Connections to the listener will have their messages parsed as HTTP and converted to Request
+    ///
+    /// The request_handler should handle all kinds of routing etc. based on the request.
     pub fn start_server(address: &str, request_handler: fn(Request) -> Response) -> io::Result<()> {
         let listener = TcpListener::bind(address)?;
 

@@ -34,6 +34,7 @@ fn get_content_length(headers: &HashMap<String, String>) -> Result<usize, String
     Ok(size)
 }
 
+/// Parses reads and parses a HTTP request
 pub fn parse(buf: &mut BufReader<&mut TcpStream>) -> Result<Request, String> {
     // TODO could this be done with a lines() iteration with take_while line > 2 and still get the body
     // after that.
