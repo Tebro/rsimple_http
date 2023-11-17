@@ -21,13 +21,12 @@ pub struct Request {
 fn get_content_length(headers: &HashMap<String, String>) -> Option<usize> {
     let content_length = headers.get("Content-Length")?;
     let Ok(size) = content_length.parse::<usize>() else {
-        // TODO: bad request
         return None;
     };
     Some(size)
 }
 
-/// Parses reads and parses a HTTP request
+/// Reads and parses a HTTP request
 pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
     // TODO could this be done with a lines() iteration with take_while line > 2 and still get the body
     // after that.
@@ -73,7 +72,7 @@ pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
 
     let size = match get_content_length(&headers) {
         Some(size) => size,
-        None => 0,
+        None => 0, // TODO: Bad Request for POST?
     };
 
     let body = if size > 0 {
