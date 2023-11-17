@@ -3,57 +3,53 @@ use std::{
     fmt::{self, Display},
 };
 
-pub struct Response {
-    code: usize,
-    headers: HashMap<String, String>,
-    body: String,
+pub enum ResponseCode {
+    OK,
+    Created,
+    Accepted,
+    MovedPermanently,
+    NotModified,
+    BadRequest,
+    Unauthorized,
+    Forbidden,
+    NotFound,
+    MethodNotSupported,
+    InternalServerError,
 }
 
-fn code_name(code: usize) -> Option<&'static str> {
-    match code {
-        200 => Some("OK"),
-        201 => Some("Created"),
-        202 => Some("Accepted"),
-        203 => Some("Non-Authoritative Information"),
-        204 => Some("No Content"),
-        205 => Some("Reset Content"),
-        206 => Some("Partial Content"),
-        300 => Some("Multiple Choices"),
-        301 => Some("Moved Permanently"),
-        302 => Some("Found"),
-        303 => Some("See Other"),
-        304 => Some("Not Modified"),
-        307 => Some("Temporary Redirect"),
-        308 => Some("Permanent Redirect"),
-        400 => Some("Bad Request"),
-        401 => Some("Unauthorized"),
-        403 => Some("Forbidden"),
-        404 => Some("Not Found"),
-        405 => Some("Method Not Allowed"),
-        406 => Some("Not Acceptable"),
-        407 => Some("Proxy Authentication Required"),
-        408 => Some("Request Timeout"),
-        409 => Some("Conflict"),
-        410 => Some("Gone"),
-        411 => Some("Length Required"),
-        // TODO: more?
-        500 => Some("Internal Server Error"),
-        501 => Some("Not Implemented"),
-        502 => Some("Bad Gateway"),
-        503 => Some("Service Unavailable"),
-        // TODO: more?
-        _ => None,
+impl Display for ResponseCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = match self {
+            ResponseCode::OK => "200 OK",
+            ResponseCode::Created => "201 Created",
+            ResponseCode::Accepted => "202 Accepted",
+            ResponseCode::MovedPermanently => "301 Moved Permanently",
+            ResponseCode::NotModified => "304 Not Modified",
+            ResponseCode::BadRequest => "400 Bad Request",
+            ResponseCode::Unauthorized => "401 Unauthorized",
+            ResponseCode::Forbidden => "403 Forbidden",
+            ResponseCode::NotFound => "404 Not Found",
+            ResponseCode::MethodNotSupported => "405 Method Not Supported",
+            ResponseCode::InternalServerError => "500 Internal Server Error",
+        };
+        write!(f, "{}", val)
     }
+}
+
+pub struct Response {
+    code: ResponseCode,
+    headers: HashMap<String, String>,
+    body: String,
 }
 
 impl Response {
     /// Helper to create a 200 OK response
     pub fn ok(body: String) -> Self {
-        Self::with_code(200, body)
+        Self::with_code(ResponseCode::OK, body)
     }
 
     /// Creates a Response for the given code and body
-    pub fn with_code(code: usize, body: String) -> Self {
+    pub fn with_code(code: ResponseCode, body: String) -> Self {
         return Self {
             code,
             headers: HashMap::new(),
@@ -78,15 +74,7 @@ impl Response {
 
 impl Display for Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let code_name = code_name(self.code);
-        let status_line = match code_name {
-            // TODO cleanup
-            Some(name) => format!("HTTP/1.1 {} {}", self.code, name),
-            None => {
-                println!("invalid status code in response: {}", self.code);
-                return Err(fmt::Error);
-            }
-        };
+        let status_line = format!("HTTP/1.1 {}", self.code);
         let length = self.length();
         if self.headers.len() > 0 {
             let headers = self
