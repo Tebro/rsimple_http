@@ -38,5 +38,5 @@ pub fn start_server(address: &str, request_handler: fn(Request) -> Response) -> 
         });
     }
 
-    return Ok(());
+    Ok(())
 }

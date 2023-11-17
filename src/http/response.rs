@@ -50,11 +50,11 @@ impl Response {
 
     /// Creates a Response for the given code and body
     pub fn with_code(code: ResponseCode, body: String) -> Self {
-        return Self {
+        Self {
             code,
             headers: HashMap::new(),
             body,
-        };
+        }
     }
 
     /// Set the headers on the response
@@ -76,7 +76,7 @@ impl Display for Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let status_line = format!("HTTP/1.1 {}", self.code);
         let length = self.length();
-        if self.headers.len() > 0 {
+        if !self.headers.is_empty() {
             let headers = self
                 .headers
                 .iter()
@@ -97,6 +97,6 @@ impl Display for Response {
             self.body
         )?;
 
-        return Ok(());
+        Ok(())
     }
 }

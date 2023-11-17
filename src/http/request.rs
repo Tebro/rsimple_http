@@ -66,27 +66,25 @@ pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
 
     let headers: HashMap<String, String> = header_pairs
         .iter()
-        .map(|line| line.split_once(":").unwrap())
+        .map(|line| line.split_once(':').unwrap())
         .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
         .collect();
 
-    let size = match get_content_length(&headers) {
-        Some(size) => size,
-        None => 0, // TODO: Bad Request for POST?
-    };
+    let size = get_content_length(&headers).unwrap_or(0);
+    // TODO: Bad Request for POST if size is missing?
 
     let body = if size > 0 {
         let mut body_buf = vec![0; size];
-        let _n = buf.read_exact(&mut body_buf).unwrap();
+        buf.read_exact(&mut body_buf).unwrap();
         String::from_utf8(body_buf).unwrap()
     } else {
         String::new()
     };
 
-    return Ok(Request {
+    Ok(Request {
         method,
         path: path.to_string(),
         headers,
         body,
-    });
+    })
 }
