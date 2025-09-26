@@ -19,7 +19,14 @@ pub struct Request {
 }
 
 fn get_content_length(headers: &HashMap<String, String>) -> Option<usize> {
-    let content_length = headers.get("Content-Length")?;
+    let mut content_length = headers.get("Content-Length");
+    if content_length.is_none() {
+        content_length = headers.get("content-length");
+    }
+    if content_length.is_none() {
+        return None;
+    }
+    let content_length = content_length.unwrap();
     let Ok(size) = content_length.parse::<usize>() else {
         return None;
     };
