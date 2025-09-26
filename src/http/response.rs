@@ -61,10 +61,7 @@ impl Response {
     ///
     /// Note that Content-Length will be set automatically if using the rsimple_http server
     pub fn headers(&mut self, headers: Vec<(String, String)>) {
-        self.headers = headers
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone())) //TODO: there has to be a better way
-            .collect();
+        self.headers = headers.iter().cloned().collect();
     }
 
     fn length(&self) -> usize {
