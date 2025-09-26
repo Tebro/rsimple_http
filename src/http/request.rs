@@ -40,6 +40,101 @@ fn get_content_length(headers: &HashMap<String, String>) -> Option<usize> {
     None
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_content_length_header_exact_match() {
+        let headers = vec!["Content-Length".to_string(), "Host".to_string()];
+        let result = find_content_length_header(headers);
+        assert_eq!(result, Some("Content-Length".to_string()));
+    }
+
+    #[test]
+    fn test_find_content_length_header_case_insensitive() {
+        let headers = vec!["content-length".to_string(), "Host".to_string()];
+        let result = find_content_length_header(headers);
+        assert_eq!(result, Some("content-length".to_string()));
+    }
+
+    #[test]
+    fn test_find_content_length_header_mixed_case() {
+        let headers = vec!["Content-LENGTH".to_string(), "Host".to_string()];
+        let result = find_content_length_header(headers);
+        assert_eq!(result, Some("Content-LENGTH".to_string()));
+    }
+
+    #[test]
+    fn test_find_content_length_header_not_found() {
+        let headers = vec!["Host".to_string(), "User-Agent".to_string()];
+        let result = find_content_length_header(headers);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_find_content_length_header_empty() {
+        let headers = vec![];
+        let result = find_content_length_header(headers);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_content_length_valid() {
+        let mut headers = HashMap::new();
+        headers.insert("Content-Length".to_string(), "42".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, Some(42));
+    }
+
+    #[test]
+    fn test_get_content_length_case_insensitive() {
+        let mut headers = HashMap::new();
+        headers.insert("content-length".to_string(), "123".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, Some(123));
+    }
+
+    #[test]
+    fn test_get_content_length_zero() {
+        let mut headers = HashMap::new();
+        headers.insert("Content-Length".to_string(), "0".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, Some(0));
+    }
+
+    #[test]
+    fn test_get_content_length_invalid_number() {
+        let mut headers = HashMap::new();
+        headers.insert("Content-Length".to_string(), "not_a_number".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_content_length_negative_number() {
+        let mut headers = HashMap::new();
+        headers.insert("Content-Length".to_string(), "-1".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_content_length_header_not_present() {
+        let headers = HashMap::new();
+        let result = get_content_length(&headers);
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn test_get_content_length_empty_value() {
+        let mut headers = HashMap::new();
+        headers.insert("Content-Length".to_string(), "".to_string());
+        let result = get_content_length(&headers);
+        assert_eq!(result, None);
+    }
+}
+
 /// Reads and parses a HTTP request
 pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
     // TODO could this be done with a lines() iteration with take_while line > 2 and still get the body

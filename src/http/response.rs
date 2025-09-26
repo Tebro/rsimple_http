@@ -97,3 +97,43 @@ impl Display for Response {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_headers_method() {
+        let mut response = Response::ok("test body".to_string());
+
+        let headers = vec![
+            ("Content-Type".to_string(), "text/html".to_string()),
+            ("X-Custom-Header".to_string(), "custom-value".to_string()),
+        ];
+
+        response.headers(headers.clone());
+
+        // Check that headers were set correctly
+        assert_eq!(response.headers.len(), 2);
+        assert_eq!(
+            response.headers.get("Content-Type"),
+            Some(&"text/html".to_string())
+        );
+        assert_eq!(
+            response.headers.get("X-Custom-Header"),
+            Some(&"custom-value".to_string())
+        );
+
+        // Test that setting new headers replaces old ones
+        let new_headers = vec![("Authorization".to_string(), "Bearer token".to_string())];
+
+        response.headers(new_headers);
+
+        assert_eq!(response.headers.len(), 1);
+        assert_eq!(
+            response.headers.get("Authorization"),
+            Some(&"Bearer token".to_string())
+        );
+        assert_eq!(response.headers.get("Content-Type"), None);
+    }
+}
