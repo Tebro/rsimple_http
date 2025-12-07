@@ -1,7 +1,7 @@
 use crate::calc::handle_calculate;
-use rsimple_http::http::request::Method;
-use rsimple_http::http::response::Response;
-use rsimple_http::http::response::ResponseCode;
+use http::Method;
+use http::Response;
+use http::StatusCode;
 use rsimple_http::http::start_server;
 
 mod calc;
@@ -12,20 +12,29 @@ fn main() {
     println!("Starting on {address}");
     // TODO handle startup and listening errors
     let _ = start_server(address, |req| match req.path.as_str() {
-        "/" => Response::ok("Hello World!".to_string()),
+        "/" => Response::builder()
+            .status(StatusCode::OK)
+            .body("Hello world".to_string())
+            .unwrap(),
         "/calc" => match req.method {
             Method::POST => match handle_calculate(&req.body) {
-                Ok(result) => Response::ok(format!("{}", result).to_string()),
-                Err(e) => Response::with_code(
-                    ResponseCode::InternalServerError,
-                    format!("Error: {}", e).to_string(),
-                ),
+                Ok(result) => Response::builder()
+                    .status(StatusCode::OK)
+                    .body(format!("{}", result).to_string())
+                    .unwrap(),
+                Err(e) => Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(format!("Error: {}", e).to_string())
+                    .unwrap(),
             },
-            _ => Response::with_code(
-                ResponseCode::MethodNotSupported,
-                "method not supported".to_string(),
-            ),
+            _ => Response::builder()
+                .status(StatusCode::METHOD_NOT_ALLOWED)
+                .body("".to_string())
+                .unwrap(),
         },
-        _ => Response::with_code(ResponseCode::NotFound, "not found".to_string()),
+        _ => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .body("".to_string())
+            .unwrap(),
     });
 }

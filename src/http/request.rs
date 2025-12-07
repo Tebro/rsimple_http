@@ -1,14 +1,5 @@
 use std::{collections::HashMap, io::BufRead};
-
-#[derive(Debug, PartialEq)]
-pub enum Method {
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    PATCH,
-    DELETE,
-}
+use http::method::Method;
 
 #[derive(Debug)]
 pub struct Request {
@@ -147,12 +138,12 @@ pub fn parse(buf: &mut impl BufRead) -> Result<Request, String> {
 
     let method = split.next();
     let method = match method {
-        Some("GET") => Method::GET,
-        Some("HEAD") => Method::HEAD,
-        Some("POST") => Method::POST,
-        Some("PUT") => Method::PUT,
-        Some("PATCH") => Method::PATCH,
-        Some("DELETE") => Method::DELETE,
+        Some("GET") => http::method::Method::GET,
+        Some("HEAD") => http::method::Method::HEAD,
+        Some("POST") => http::method::Method::POST,
+        Some("PUT") => http::method::Method::PUT,
+        Some("PATCH") => http::method::Method::PATCH,
+        Some("DELETE") => http::method::Method::DELETE,
         _ => return Err("unsupported method".to_string()),
     };
 
